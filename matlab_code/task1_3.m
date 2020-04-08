@@ -17,10 +17,9 @@ function task1_3(Cov)
   Cumvar = cumsum(EVals);
   var_ratios = Cumvar ./ Cumvar(size(Cumvar,1));
   ratio_targets = [0.7 0.8 0.9 0.95];
-  [tmp idx] = max(var_ratios, [], 1)'
+  [tmp idx] = max(var_ratios > ratio_targets, [], 1);
   MinDims = idx';
   
-
   save('t1_EVecs.mat', 'EVecs');
   save('t1_EVals.mat', 'EVals');
   save('t1_Cumvar.mat', 'Cumvar');

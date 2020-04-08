@@ -7,5 +7,5 @@ function [Y] = task2_hNeuron(W, X)
 %  W : (D+1)-by-1 vector of weights (double)
 % Output:
 %  Y : N-by-1 vector of output (double)
-
+    Y = double([ones(size(X,1),1) X] * W > 0);
 end
