@@ -7,5 +7,5 @@ function [Y] = task2_sNeuron(W, X)
 %  W : (D+1)-by-1 vector of weights (double)
 % Output:
 %  Y : N-by-1 vector of output (double)
-    Y = 1./(1+exp([-ones(size(X,1),1) X] * W));
+    Y = 1 ./ (1+exp(-([ones(size(X,1),1) X] * W)));
 end
