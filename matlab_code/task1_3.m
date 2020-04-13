@@ -14,6 +14,7 @@ function task1_3(Cov)
   e_vals = diag(e_vals);
   [EVals idxs] = sort(e_vals,1,'descend');
   EVecs = e_vecs(:,idxs);
+  EVecs(:,EVecs(1,:) < 0) = -EVecs(:,EVecs(1,:) < 0);
   Cumvar = cumsum(EVals);
   var_ratios = Cumvar ./ Cumvar(size(Cumvar,1));
   ratio_targets = [0.7 0.8 0.9 0.95];

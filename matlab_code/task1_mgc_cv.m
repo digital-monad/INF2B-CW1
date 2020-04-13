@@ -1,7 +1,7 @@
 %
 % Versin 0.9  (HS 06/03/2020)
 %
-function task1_mgc_cv(X, Y, CovKind, epsilon, Kfolds, t)
+function task1_mgc_cv(X, Y, CovKind, epsilon, Kfolds)
 % Input:
 %  X : N-by-D matrix of feature vectors (double)
 %  Y : N-by-1 label vector (int32)
@@ -15,41 +15,80 @@ function task1_mgc_cv(X, Y, CovKind, epsilon, Kfolds, t)
 %  Covs   : C-by-D-by-D array of covariance matrices (double)
 %  CM     : C-by-C confusion matrix (double)
 
-    train_set = X(1:4000,:); % For now, arbitrary split
-    train_labels = Y(1:4000,:);
-    test_set = X(t,:);
-    test_labels = Y(t,:);
-    Ms = zeros(10,size(X,2));
-
-    if (CovKind == 1)
-        % Full covariance matrix
-        Covs = zeros(size(X,2),size(X,2),10);
-        inv_covs = zeros(size(X,2),size(X,2),10);
-        dets = zeros(10,1);
-        for k = 1:10
-            Ms(k,:) = mean(train_set(train_labels==k,:));
-            Covs(:,:,k) = cov(train_set(train_labels==k,:), 1);
-            Covs(:,:,k) = Covs(:,:,k) + epsilon*eye(size(Covs(:,:,k),2));
-            inv_covsT(:,:,k) = inv(Covs(:,:,k))';
-            dets(k,:) = det(Covs(:,:,k));
-        end
-        test_probs1 = -0.5 * squeeze(sum(sum(reshape((test_set-Ms)',1,[],10) .* inv_covsT,2) .* reshape((test_set-Ms)',[],1,10),1)) - 0.5*log(dets);
-        %{test_probs = zeros(10,1);
-        for k = 1:10
-            LLPx = -0.5 * (test_set - Ms(k,:)) * inv(Covs(:,:,k)) * (test_set - Ms(k,:))' - 0.5 * log(det(Covs(:,:,k)));
-            test_probs(k,:) = LLPx;
-        end
-        %}
-        
-        else
-        % Shared covariance matrix
-        
+    numClasses = max(Y); % Get the number of classes in the datatset
+    % Partition the data
+    PMap = zeros(size(X,1),1);
+    for class = 1:numClasses
+       Nc = sum(Y == class); % Number of elements of kth class
+       Mc = floor(double(Nc)/double(Kfolds)); % Number of data of class k to go in each partition
+       idxs = find(Y == class); % Indices of the data of class k
+       for k = 1:Kfolds-1
+            PMap(idxs((k-1)*Mc + 1:k*Mc)) = k; % Assign the data to the appropriate partition
+       end
+       PMap(PMap == 0) = Kfolds; % Assign the remaining data to the Kth partition
+       
     end
-        [max_prob pred_class] = max(test_probs1);
-        printf("Predicted class: ");
-        disp(pred_class);
-        printf("Actual class: ");
-        disp(test_labels);
+    
+    normalisedCMat = zeros(numClasses,numClasses,Kfolds); % 3D matrix to hold the confusion matrices for each fold
+
+    for k = 1:Kfolds % Loop through each combination of train/test sets
+
+      % Assign the test set as the current partition
+      test_set = X(PMap == k,:);
+      test_labels = Y(PMap == k,:);
+      train_set = X(PMap != k,:);
+      train_labels = Y(PMap != k,:);
+      % Find the mean vectors for each class  
+      Ms = zeros(numClasses,size(X,2));
+      for k = 1:numClasses
+          Ms(k,:) = mean(train_set(train_labels==k,:));
+      end
+      %disp(Ms(1,:));
+
+      if (CovKind == 1)
+          % Full covariance matrix
+          Covs = zeros(size(X,2),size(X,2),numClasses);
+          inv_covs = zeros(size(X,2),size(X,2),numClasses); % Convenience variable used in calculating probs
+          dets = zeros(numClasses,1); % Convenience variable used in calculating probs
+          for k = 1:numClasses
+              Covs(:,:,k) = cov(train_set(train_labels==k,:), 1);
+              Covs(:,:,k) = Covs(:,:,k) + epsilon*eye(size(Covs(:,:,k),2));
+              inv_covsT(:,:,k) = inv(Covs(:,:,k))';
+              dets(k,:) = det(Covs(:,:,k));
+          end
+          
+          
+      elseif (CovKind == 2)
+          % Diagonal covariance matrix
+          Covs = zeros(size(X,2),size(X,2),numClasses);
+          inv_covs = zeros(size(X,2),size(X,2),numClasses);
+          dets = zeros(numClasses,1);
+          for k = 1:numClasses
+              Covs(:,:,k) = diag(diag(cov(train_set(train_labels==k,:), 1)));
+              Covs(:,:,k) = Covs(:,:,k) + epsilon*eye(size(Covs(:,:,k),2));
+              inv_covsT(:,:,k) = inv(Covs(:,:,k))';
+              dets(k,:) = det(Covs(:,:,k));
+          end
+          
+          
+      else
+          % Shared covariance matrix
+          Covs = repmat(cov(train_set,1) + epsilon*eye(24,24),1,1,numClasses);
+          inv_covsT = repmat(inv(cov(train_set,1))',1,1,numClasses);
+          dets = repmat(det(cov(train_set,1)),numClasses,1);
+      end
+      
+      
+      LPP = computeLPP(test_set,test_labels,inv_covsT,dets,Ms);
+      confus = myConMat(LPP,numClasses) ./  size(test_set,1);
+      normalisedCMat(:,:,k) = confus;
+    
+   end
+   
+   finalConfusMat = sum(normalisedCMat,3) ./ Kfolds;
+   disp(finalConfusMat);
+   disp(sum(diag(finalConfusMat))/ sum(sum(finalConfusMat)));
+        
 
     
 
