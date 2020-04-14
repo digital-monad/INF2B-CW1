@@ -49,7 +49,7 @@ function task1_mgc_cv(X, Y, CovKind, epsilon, Kfolds)
       for k = 1:numClasses
           Ms(k,:) = MyMean(train_set(train_labels==k,:));
       end
-      nam = strcat('t1_mgc_','cv','_Ms.mat');
+      nam = strcat('t1_mgc_',kf,'cv',p,'_Ms.mat');
       save(nam, 'Ms');
 
       if (CovKind == 1)
