@@ -8,10 +8,8 @@ function task1_1(X, Y)
 % Variables to save
 %  S : D-by-D covariance matrix (double) to save as 't1_S.mat'
 %  R : D-by-D correlation matrix (double) to save as 't1_R.mat'
-  S = ((X - mean(X))'*(X - mean(X)))/size(X,1);
-  R = S ./ (std(X)'*std(X));
-
-
+  S = MyCov(X);
+  R = (S * size(X,1)/(size(X,1)-1)) ./ (MyStd(X)'*MyStd(X));
   save('t1_S.mat', 'S');
   save('t1_R.mat', 'R');
 end

@@ -24,13 +24,14 @@
 
 function [probs] = computeLPP (test_set, test_labels, inv_covsT, dets, M)
 
-    probs = zeros(size(test_set,1),2);
+    probs = zeros(size(test_set,1),2); % Nx2 matrix of 'Actual' | 'Predicted' for each data point
 
     for i = 1:size(test_set,1)
-        probs(i,1) = test_labels(i);
+        probs(i,1) = test_labels(i); % Fill in the actual class
+        % Compute the log probabilties for all the classes - since prior uniform distribution, term ln(P(C)) can be ignored as is identical for all classes
         classProbs = -0.5 * squeeze(sum(sum(reshape((test_set(i,:)-M)',1,[],10) .* inv_covsT,2) .* reshape((test_set(i,:)-M)',[],1,10),1)) - 0.5*log(dets);
-        [max_prob pred_class] = max(classProbs);
-        probs(i,2) = pred_class;
+        [max_prob pred_class] = max(classProbs); % Select the most probable class
+        probs(i,2) = pred_class; % Fill in the selected class
     
     end
 

@@ -20,7 +20,7 @@ function [Y] = task2_sNN_AB(X)
         -0.04716752544809368 0.0995883953955948 -0.13234412139987295
         -0.5930247369060524 0.12946563165119193 0.13234412139987295]';
         
-    W1 = 10000*[WA WBB WBS];
+    W1 = [WA WBB WBS];
     
     W2 = [-0.5 1 1 1 1 0 0 0 0 0 0
           -2.5 0 0 0 0 1 1 1 0 0 0
@@ -30,9 +30,22 @@ function [Y] = task2_sNN_AB(X)
     W3 = [-2.5 1 1 1]';
         
         
+    % Everything identical to task2_hNN_AB, except using sNeuron
     
+    %finalLayerNeuron = task2_sNeuron(W3,task2_sNeuron(10000*W2,task2_sNeuron(W1,X)));
     
-    finalLayerNeuron = task2_sNeuron(W3,task2_sNeuron(10000*W2,task2_sNeuron(W1,X)));
-    Y = double(finalLayerNeuron > 0.5);
+    L1 = zeros(size(X,1),10);
+    for w = 1:10
+        L1(:,w) = task2_sNeuron(10000*W1(:,w),X); % Multiply L1 and L2 weights by large scale factor to approximate step function
+    end
+    L2 = zeros(size(X,1),3);
+    for w = 1:3
+        L2(:,w) = task2_sNeuron(10000*W2(:,w),L1);
+    end
+    L3 = zeros(size(X,1),1);
+    for w = 1:1
+        L3(:,w) = task2_sNeuron(W3(:,w),L2);
+    end
+    Y = double(L3 > 0.5);
 
 end
